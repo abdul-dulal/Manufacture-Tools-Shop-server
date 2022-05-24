@@ -72,7 +72,7 @@ async function run() {
   // create admin role
   app.put("/user/admin/:email", async (req, res) => {
     const email = req.params.email;
-    console.log(email);
+
     const filter = { email: email };
     const updateDoc = {
       $set: { role: "admin" },
@@ -110,7 +110,6 @@ async function run() {
   // add review
   app.post("/review", async (req, res) => {
     const body = req.body;
-    console.log(body);
     const result = await reviewCollection.insertOne(body);
     res.send(result);
   });
