@@ -25,6 +25,7 @@ async function run() {
   const userCollection = client.db("bagdom").collection("user");
   const reviewCollection = client.db("bagdom").collection("review");
   const orderCollection = client.db("bagdom").collection("order");
+  const profileCollection = client.db("bagdom").collection("profile");
 
   //verify jwt
   function verifyJwt(req, res, next) {
@@ -61,18 +62,9 @@ async function run() {
     const filter = { _id: ObjectId(id) };
   });
 
-  // my profile
-  app.get("/profile/:email", async (req, res) => {
-    const email = req.params.email;
-    const query = { email: email };
-    const result = await userCollection.findOne(query);
-    res.send(result);
-  });
-
   // create admin role
   app.put("/user/admin/:email", async (req, res) => {
     const email = req.params.email;
-
     const filter = { email: email };
     const updateDoc = {
       $set: { role: "admin" },
@@ -122,10 +114,49 @@ async function run() {
   });
 
   // order post
-
-  app.post("/post", async (req, res) => {
+  app.post("/order", async (req, res) => {
     const order = req.body;
     const result = await orderCollection.insertOne(order);
+    res.send(result);
+  });
+
+  // get order
+  app.get("/order", async (req, res) => {
+    const result = await orderCollection.find().toArray();
+    res.send(result);
+  });
+
+  // get oerder for payment
+
+  app.get("/order/:id", async (req, res) => {
+    const id = req.params.id;
+    const filter = { _id: ObjectId(id) };
+    const result = await orderCollection.findOne(filter);
+    res.send(result);
+  });
+
+  // update profile
+  app.put("/profile/:email", async (req, res) => {
+    const email = req.params.email;
+    const profile = req.body;
+
+    const filter = { email: email };
+    const options = { upsert: true };
+    const updateDoc = {
+      $set: profile,
+    };
+    const result = await profileCollection.updateOne(
+      filter,
+      updateDoc,
+      options
+    );
+    console.log(result);
+    res.send(result);
+  });
+
+  // my profile
+  app.get("/profile", async (req, res) => {
+    const result = await profileCollection.find().toArray();
     res.send(result);
   });
 }
