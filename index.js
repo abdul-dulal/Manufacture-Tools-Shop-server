@@ -137,7 +137,9 @@ async function run() {
 
   // get order
   app.get("/order", async (req, res) => {
-    const result = await orderCollection.find().toArray();
+    const email = req.query.email;
+    const query = { email: email };
+    const result = await orderCollection.find(query).toArray();
     res.send(result);
   });
 
@@ -166,6 +168,15 @@ async function run() {
     const result = await paymentCollection.insertOne(payment);
     const updateOrder = await orderCollection.updateOne(filter, updateDoc);
     res.send(updateOrder);
+  });
+
+  // cancel order
+
+  app.delete("/delete/:_id", async (req, res) => {
+    const id = req.params._id;
+    const filter = { _id: ObjectId(id) };
+    const result = await orderCollection.deleteOne(filter);
+    res.send(result);
   });
 
   // update profile
