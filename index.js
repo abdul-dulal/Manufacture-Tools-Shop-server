@@ -33,18 +33,18 @@ async function run() {
   function verifyJwt(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      return res.status(401).send({ message: "unauthorized access" });
+      return res.status(401).send({ message: "UnAuthorized access" });
     }
     const token = authHeader.split(" ")[1];
+
     jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
       if (err) {
-        return res.status(403).send({ message: "forbidden access" });
+        return res.status(403).send({ message: "Forbidden no acccess" });
       }
       req.decoded = decoded;
       next();
     });
   }
-
   // payment intent
   app.post("/create-payment-intent", async (req, res) => {
     const service = req.body;
@@ -58,7 +58,7 @@ async function run() {
     res.send({ clientSecret: paymentIntent.client_secret });
   });
 
-  app.get("/product", async (req, res) => {
+  app.get("/product", verifyJwt, async (req, res) => {
     const result = await productCollection.find().toArray();
     res.send(result);
   });
@@ -122,7 +122,7 @@ async function run() {
   });
 
   // add review
-  app.post("/review", async (req, res) => {
+  app.post("/review", verifyJwt, async (req, res) => {
     const body = req.body;
     const result = await reviewCollection.insertOne(body);
     res.send(result);
@@ -143,7 +143,7 @@ async function run() {
   });
 
   // get order
-  app.get("/order", async (req, res) => {
+  app.get("/order", verifyJwt, async (req, res) => {
     const email = req.query.email;
     const query = { email: email };
     const result = await orderCollection.find(query).toArray();
