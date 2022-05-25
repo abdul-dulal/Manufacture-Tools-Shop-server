@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 var jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_KEY);
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -26,6 +27,7 @@ async function run() {
   const reviewCollection = client.db("bagdom").collection("review");
   const orderCollection = client.db("bagdom").collection("order");
   const profileCollection = client.db("bagdom").collection("profile");
+  const paymentCollection = client.db("bagdom").collection("payment");
 
   //verify jwt
   function verifyJwt(req, res, next) {
@@ -42,6 +44,19 @@ async function run() {
       next();
     });
   }
+
+  // payment intent
+  app.post("/create-payment-intent", async (req, res) => {
+    const service = req.body;
+    const price = service.price;
+    const amount = price * 100;
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: "usd",
+      payment_method_types: ["card"],
+    });
+    res.send({ clientSecret: paymentIntent.client_secret });
+  });
 
   app.get("/product", async (req, res) => {
     const result = await productCollection.find().toArray();
@@ -135,6 +150,24 @@ async function run() {
     res.send(result);
   });
 
+  // order update
+
+  app.put("/order/:id", async (req, res) => {
+    const id = req.params.id;
+    const filter = { _id: ObjectId(id) };
+    const payment = req.body;
+
+    const updateDoc = {
+      $set: {
+        paid: true,
+        transactionId: payment.transactionId,
+      },
+    };
+    const result = await paymentCollection.insertOne(payment);
+    const updateOrder = await orderCollection.updateOne(filter, updateDoc);
+    res.send(updateOrder);
+  });
+
   // update profile
   app.put("/profile/:email", async (req, res) => {
     const email = req.params.email;
@@ -150,7 +183,7 @@ async function run() {
       updateDoc,
       options
     );
-    console.log(result);
+
     res.send(result);
   });
 
