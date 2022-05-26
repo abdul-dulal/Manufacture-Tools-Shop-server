@@ -45,17 +45,6 @@ async function run() {
     });
   }
 
-  // verifyAdmin
-  // const verifyAdmin = async (req, res, next) => {
-  //   const requester = req.decoded.email;
-  //   const requesterAccount = await userCollection.findOne({ email: requester });
-  //   if (requesterAccount.role === "admin") {
-  //     next();
-  //   } else {
-  //     res.status(403).send({ message: "forbidden" });
-  //   }
-  // };
-
   // payment intent
   app.post("/create-payment-intent", async (req, res) => {
     const service = req.body;
@@ -170,6 +159,13 @@ async function run() {
     const email = req.query.email;
     const query = { email: email };
     const result = await orderCollection.find(query).toArray();
+    res.send(result);
+  });
+
+  // all order
+
+  app.get("/orders", async (req, res) => {
+    const result = await orderCollection.find().toArray();
     res.send(result);
   });
 
