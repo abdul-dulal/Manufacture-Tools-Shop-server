@@ -36,7 +36,6 @@ async function run() {
       return res.status(401).send({ message: "UnAuthorized access" });
     }
     const token = authHeader.split(" ")[1];
-
     jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
       if (err) {
         return res.status(403).send({ message: "Forbidden no acccess" });
@@ -45,6 +44,18 @@ async function run() {
       next();
     });
   }
+
+  // verifyAdmin
+  // const verifyAdmin = async (req, res, next) => {
+  //   const requester = req.decoded.email;
+  //   const requesterAccount = await userCollection.findOne({ email: requester });
+  //   if (requesterAccount.role === "admin") {
+  //     next();
+  //   } else {
+  //     res.status(403).send({ message: "forbidden" });
+  //   }
+  // };
+
   // payment intent
   app.post("/create-payment-intent", async (req, res) => {
     const service = req.body;
@@ -84,25 +95,37 @@ async function run() {
     const filter = { _id: ObjectId(id) };
   });
 
-  // create admin role
-  app.put("/user/admin/:email", async (req, res) => {
-    const email = req.params.email;
-    const filter = { email: email };
-    const updateDoc = {
-      $set: { role: "admin" },
-    };
-    const result = await userCollection.updateOne(filter, updateDoc);
+  //
+  app.get("/users", async (req, res) => {
+    const result = await userCollection.find().toArray();
     res.send(result);
   });
 
   // admin role check
 
-  app.get("user/:email", async (req, res) => {
+  app.get("/admin/:email", async (req, res) => {
     const email = req.params.email;
     const query = { email: email };
     const user = await userCollection.findOne(query);
     const isadmin = user.role === "admin";
     res.send({ admin: isadmin });
+  });
+
+  app.put("/user/admin/:email", verifyJwt, async (req, res) => {
+    const email = req.params.email;
+
+    const requster = req.decoded.email;
+    const requsterAccount = await userCollection.findOne({ email: requster });
+    if (requsterAccount.role === "admin") {
+      const filter = { email: email };
+      const updateDoc = {
+        $set: { role: "admin" },
+      };
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    } else {
+      res.status(403).send({ message: "forbidden" });
+    }
   });
 
   //update user
@@ -143,7 +166,7 @@ async function run() {
   });
 
   // get order
-  app.get("/order", verifyJwt, async (req, res) => {
+  app.get("/order", async (req, res) => {
     const email = req.query.email;
     const query = { email: email };
     const result = await orderCollection.find(query).toArray();
@@ -214,9 +237,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("Hello From Doctor Uncle!");
+  res.send("Hello From Bagdom!");
 });
 
 app.listen(port, () => {
-  console.log(`Doctors App listening on port ${port}`);
+  console.log(`Bagdom App listening on port ${port}`);
 });
