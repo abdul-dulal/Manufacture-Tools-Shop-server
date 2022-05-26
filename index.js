@@ -69,7 +69,7 @@ async function run() {
     res.send({ clientSecret: paymentIntent.client_secret });
   });
 
-  app.get("/product", verifyJwt, async (req, res) => {
+  app.get("/product", async (req, res) => {
     const result = await productCollection.find().toArray();
     res.send(result);
   });
